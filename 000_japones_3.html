@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudio de Vocabulario Japonés</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+      color: #333;
+    }
+    .container {
+      padding: 1em;
+      max-width: 600px;
+      margin: auto;
+      padding-bottom: 6em;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .mode-grid, .block-grid, .subblock-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 0.5em;
+      margin-top: 1em;
+    }
+    .mode-btn, .block-btn, .subblock-btn {
+      padding: 0.5em;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .progress-container {
+      text-align: center;
+      margin-top: 1em;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background-color: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background-color: #007BFF;
+      transition: width 0.3s ease;
+    }
+    .study-card {
+      background: white;
+      padding: 2em;
+      margin-top: 1em;
+      text-align: center;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      min-height: 8em;
+    }
+    .button-area {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #f2f2f2;
+      padding: 1em;
+      box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: center;
+      gap: 1em;
+    }
+    .button-area button {
+      flex: 1;
+      font-size: 1.5em;
+      padding: 0.75em;
+      transition: opacity 0.2s;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Estudio de Vocabulario Japonés</h1>
+  <div id="setup">
+    <h2>Selecciona el tipo de estudio</h2>
+    <div class="mode-grid">
+      <button class="mode-btn" id="mode-audio" onclick="setStudyMode('audio')" style="opacity: 1;">ESCUCHA</button>
+      <button class="mode-btn" id="mode-japanese" onclick="setStudyMode('japanese')" style="opacity: 0.4;">LEE</button>
+      <button class="mode-btn" id="mode-spanish" onclick="setStudyMode('spanish')" style="opacity: 0.4;">TRADUCE</button>
+    </div>
+    <h2>Selecciona los bloques que quieres estudiar</h2>
+    <div class="block-grid" id="blockGrid"></div>
+    <div id="subblockContainer" style="display:none">
+      <h2>Selecciona los sub-bloques (solo uno activo)</h2>
+      <div class="subblock-grid" id="subblockGrid"></div>
+    </div>
+  </div>
+  <div id="study" style="display:none">
+    <div class="progress-container">
+      <div id="progress-counter">0/0</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+    <div class="study-card" id="cardDisplay"></div>
+  </div>
+</div>
+<div class="button-area" id="actionButtons">
+  <button id="startButton" onclick="startSession()" style="opacity:0.4;" disabled>Comenzar sesión de estudio</button>
+</div>
+<script>
+	const vocabulario = {
+	  "bloque_01": [
+	    { es: "esto", jp: "これ", id: "01_01" },
+	    { es: "eso", jp: "それ", id: "01_02" },
+	    { es: "aquello", jp: "あれ", id: "01_03" },
+	    { es: "este ___", jp: "この", id: "01_04" },
+	    { es: "ese ___", jp: "その", id: "01_05" },
+	    { es: "aquel ___", jp: "あの", id: "01_06" },
+	    { es: "aquí (formal)", jp: "こちら", id: "01_07" },
+	    { es: "ahí (formal)", jp: "そちら", id: "01_08" },
+	    { es: "allí (formal)", jp: "あちら", id: "01_09" },
+	    { es: "aquí (informal)", jp: "ここ", id: "01_10" },
+	    { es: "ahí (informal)", jp: "そこ", id: "01_11" },
+	    { es: "allí (informal)", jp: "あそこ", id: "01_12" },
+	    { es: "otra vez", jp: "また", id: "01_13" },
+	    { es: "hombre, persona", jp: "人", id: "01_14" },
+	    { es: "una persona, soltero", jp: "一人", id: "01_15" },
+	    { es: "arriba, encima", jp: "上", id: "01_16" },
+	    { es: "debajo de, abajo, inferior", jp: "下", id: "01_17" },
+	    { es: "meter, entrar", jp: "入る", id: "01_18" },
+	    { es: "boca, apertura, orificio", jp: "口", id: "01_19" },
+	    { es: "mujer, hija, chica", jp: "女", id: "01_20" },
+	    { es: "montaña", jp: "山", id: "01_21" },
+	    { es: "río", jp: "川", id: "01_22" },
+	    { es: "sí, es correcto", jp: "ええ", id: "01_23" },
+	    { es: "un momento, un poco", jp: "ちょっと", id: "01_24" },
+	    { es: "que (comparativo)", jp: "より", id: "01_25" },
+	    { es: "curry", jp: "カレー", id: "01_26" },
+	    { es: "libreta, cuaderno", jp: "ノート", id: "01_27" },
+	    { es: "bolígrafo, pluma", jp: "ペン", id: "01_28" },
+	    { es: "centro, dentro, a través", jp: "中", id: "01_29" },
+	    { es: "dos personas, pareja", jp: "二人", id: "01_30" },
+	    { es: "ahora, ya", jp: "今", id: "01_31" },
+	    { es: "puerta (estilo japonés)", jp: "戸", id: "01_32" },
+	    { es: "mano", jp: "手", id: "01_33" },
+	    { es: "persona, forma de hacer", jp: "方 (かた)", id: "01_34" },
+	    { es: "en dirección a", jp: "方 (ほう)", id: "01_35" },
+	    { es: "árbol, madera", jp: "木", id: "01_36" },
+	    { es: "agua fresca o fría", jp: "水", id: "01_37" },
+	    { es: "perro", jp: "犬", id: "01_38" },
+	    { es: "área, alrededores", jp: "辺", id: "01_39" },
+	    { es: "sí (afirmación)", jp: "はい", id: "01_40" },
+	    { es: "otro, otro lugar, el resto", jp: "ほか", id: "01_41" },
+	    { es: "ya (de algo terminado)", jp: "もう", id: "01_42" },
+	    { es: "gramo", jp: "グラム", id: "01_43" },
+	    { es: "abrigo", jp: "コート", id: "01_44" },
+	    { es: "baño, aseo", jp: "トイレ", id: "01_45" },
+	    { es: "pan", jp: "パン", id: "01_46" },
+	    { es: "piscina", jp: "プール", id: "01_47" },
+	    { es: "un mes", jp: "一月", id: "01_48" },
+	    { es: "redondo, esférico", jp: "丸い", id: "01_49" },
+	    { es: "hermano mayor (propio)", jp: "兄", id: "01_50" },
+	    { es: "meter, introducir", jp: "入れる", id: "01_51" },
+	    { es: "entrada, acceso", jp: "入口", id: "01_52" },
+	    { es: "cortar", jp: "切る", id: "01_53" },
+	    { es: "mitad", jp: "半", id: "01_54" },
+	    { es: "derecha", jp: "右", id: "01_55" },
+	    { es: "izquierda", jp: "左", id: "01_56" },
+	    { es: "afuera, exterior", jp: "外", id: "01_57" },
+	    { es: "adulto", jp: "大人", id: "01_58" },
+	    { es: "pequeña cantidad, poco", jp: "少し", id: "01_59" },
+	    { es: "tirar de", jp: "引く", id: "01_60" },
+	    { es: "libro", jp: "本", id: "01_61" },
+	    { es: "blanco (sustantivo)", jp: "白", id: "01_62" },
+	    { es: "ojo", jp: "目", id: "01_63" },
+	    { es: "quién sabe...", jp: "さあ", id: "01_64" },
+	    { es: "bueno... bueno, entonces", jp: "じゃ", id: "01_65" },
+	    { es: "pero, sin embargo", jp: "でも", id: "01_66" },
+	    { es: "más, un poco más", jp: "もっと", id: "01_67" },
+	    { es: "lentamente, despacio", jp: "ゆっくり", id: "01_68" },
+	    { es: "cámara", jp: "カメラ", id: "01_69" },
+	    { es: "kilo", jp: "キロ", id: "01_70" },
+	    { es: "clase", jp: "クラス", id: "01_71" },
+	    { es: "fotocopia", jp: "コピー", id: "01_72" },
+	  ],
+	  "bloque_02": [
+	    { es: "café", jp: "コーヒー", id: "02_01" },
+	    { es: "cinta", jp: "テープ", id: "02_02" },
+	    { es: "puerta (estilo occidental)", jp: "ドア", id: "02_03" },
+	    { es: "autobús", jp: "バス", id: "02_04" },
+	    { es: "metro (medida)", jp: "メートル", id: "02_05" },
+	    { es: "redondo, circular (2)", jp: "円い", id: "02_06" },
+	    { es: "salir, aparecer", jp: "出る", id: "02_07" },
+	    { es: "gordo, grueso", jp: "太い", id: "02_08" },
+	    { es: "año, edad", jp: "年", id: "02_09" },
+	    { es: "escritorio", jp: "机", id: "02_10" },
+	    { es: "previo, anterior", jp: "先", id: "02_11" },
+	    { es: "siguiente, próximo", jp: "次", id: "02_12" },
+	    { es: "estanque, laguna", jp: "池", id: "02_13" },
+	    { es: "estar/ponerse de pie", jp: "立つ", id: "02_14" },
+	    { es: "oreja", jp: "耳", id: "02_15" },
+	    { es: "carne", jp: "肉", id: "02_16" },
+	    { es: "color", jp: "色", id: "02_17" },
+	    { es: "estar (objetos), tener", jp: "ある", id: "02_18" },
+	    { es: "no, ¡nah!", jp: "いいえ", id: "02_19" },
+	    { es: "así, este tipo de", jp: "こんな", id: "02_20" },
+	    { es: "convertirse, llegar a ser", jp: "なる", id: "02_21" },
+	    { es: "taza, vaso", jp: "カップ", id: "02_22" },
+	    { es: "falda", jp: "スカート", id: "02_23" },
+	    { es: "cuchara", jp: "スプーン", id: "02_24" },
+	    { es: "suéter, jersey", jp: "セーター", id: "02_25" },
+	    { es: "test, examen", jp: "テスト", id: "02_26" },
+	    { es: "noticias", jp: "ニュース", id: "02_27" },
+	    { es: "película, filme", jp: "フィルム", id: "02_28" },
+	    { es: "tenedor", jp: "フォーク", id: "02_29" },
+	    { es: "mascota", jp: "ペット", id: "02_30" },
+	    { es: "saludable, fuerte", jp: "丈夫", id: "02_31" },
+	    { es: "hábil", jp: "上手", id: "02_32" },
+	    { es: "torpe", jp: "下手", id: "02_33" },
+	    { es: "cuerpo", jp: "体", id: "02_34" },
+	    { es: "cero (forma tradicional)", jp: "れい", id: "02_35" },
+	    { es: "cero (número)", jp: "ゼロ", id: "02_36" },
+	    { es: "1", jp: "一", id: "02_37" },
+	    { es: "2", jp: "二", id: "02_38" },
+	    { es: "3", jp: "三", id: "02_39" },
+	    { es: "4 (onyomi)", jp: "四 (し)", id: "02_40" },
+	    { es: "4 (kunyomi)", jp: "四 (よん)", id: "02_41" },
+	    { es: "5", jp: "五", id: "02_42" },
+	    { es: "6", jp: "六", id: "02_43" },
+	    { es: "7 (onyomi)", jp: "七 (しち)", id: "02_44" },
+	    { es: "7 (kunyomi)", jp: "七 (なな)", id: "02_45" },
+	    { es: "8", jp: "八", id: "02_46" },
+	    { es: "9", jp: "九", id: "02_47" },
+	    { es: "nueve (hora)", jp: "九 (く)", id: "02_48" },
+	    { es: "diez", jp: "十", id: "02_49" },
+	    { es: "cien", jp: "百", id: "02_50" },
+	    { es: "mil", jp: "千", id: "02_51" },
+	    { es: "una (cosa)", jp: "一つ", id: "02_52" },
+	    { es: "dos (cosas)", jp: "二つ", id: "02_53" },
+	    { es: "tres (cosas)", jp: "三つ", id: "02_54" },
+	    { es: "cuatro (cosas)", jp: "四つ", id: "02_55" },
+	    { es: "cinco (cosas)", jp: "五つ", id: "02_56" },
+	    { es: "seis (cosas)", jp: "六つ", id: "02_57" },
+	    { es: "siete (cosas)", jp: "七つ", id: "02_58" },
+	    { es: "ocho (cosas)", jp: "八つ", id: "02_59" },
+	    { es: "nueve (cosas)", jp: "九つ", id: "02_60" },
+	    { es: "diez mil", jp: "万", id: "02_61" },
+	    { es: "día 1 / 1 día", jp: "一日", id: "02_62" },
+	    { es: "día 2 / 2 días", jp: "二日", id: "02_63" },
+	    { es: "día 3 / 3 días", jp: "三日", id: "02_64" },
+	    { es: "día 4 / 4 días", jp: "四日", id: "02_65" },
+	    { es: "día 5 / 5 días", jp: "五日", id: "02_66" },
+	    { es: "día 6 / 6 días", jp: "六日", id: "02_67" },
+	    { es: "día 7 / 7 días", jp: "七日", id: "02_68" },
+	    { es: "día 8 / 8 días", jp: "八日", id: "02_69" },
+	    { es: "día 9 / 9 días", jp: "九日", id: "02_70" },
+	    { es: "día 10 / 10 días", jp: "十日", id: "02_71" },
+	    { es: "día 20 / 20 días", jp: "二十日", id: "02_72" },
+	  ],
+	  "bloque_03": [
+	    { es: "qué", jp: "何", id: "03_01" },
+	    { es: "publicar, mostrar", jp: "出す", id: "03_02" },
+	    { es: "primavera", jp: "春", id: "03_03" },
+	    { es: "verano", jp: "夏", id: "03_04" },
+	    { es: "otoño", jp: "秋", id: "03_05" },
+	    { es: "invierno", jp: "冬", id: "03_06" },
+	    { es: "Norte", jp: "北", id: "03_07" },
+	    { es: "Sur", jp: "南", id: "03_08" },
+	    { es: "Este", jp: "東", id: "03_09" },
+	    { es: "Oeste", jp: "西", id: "03_10" },
+	    { es: "entender", jp: "分かる", id: "03_11" },
+	    { es: "huevo", jp: "卵", id: "03_12" },
+	    { es: "viejo, antiguo (objetos)", jp: "古い", id: "03_13" },
+	    { es: "voz", jp: "声", id: "03_14" },
+	    { es: "tarde, anochecer", jp: "夕方", id: "03_15" },
+	    { es: "importante, valioso", jp: "大切", id: "03_16" },
+	    { es: "chica, niña", jp: "女の子", id: "03_17" },
+	    { es: "espacioso, amplio", jp: "広い", id: "03_18" },
+	    { es: "hermano menor (propio)", jp: "弟", id: "03_19" },
+	    { es: "aldea", jp: "村", id: "03_20" },
+	    { es: "dulce (sabor)", jp: "甘い", id: "03_21" },
+	    { es: "hombre, varón", jp: "男", id: "03_22" },
+	    { es: "pueblo", jp: "町", id: "03_23" },
+	    { es: "blanco (adjetivo)", jp: "白い", id: "03_24" },
+	    { es: "yo, mi (1)", jp: "私 (わたし)", id: "03_25" },
+	    { es: "flor", jp: "花", id: "03_26" },
+	    { es: "ir", jp: "行く", id: "03_27" },
+	    { es: "esquina", jp: "角", id: "03_28" },
+	    { es: "rojo (sustantivo)", jp: "赤", id: "03_29" },
+	    { es: "pie, pierna", jp: "足", id: "03_30" },
+	    { es: "coche", jp: "車", id: "03_31" },
+	    { es: "cerca, vecindario", jp: "近く", id: "03_32" },
+	    { es: "diversos, varios", jp: "いろいろ", id: "03_33" },
+	    { es: "plato", jp: "お皿", id: "03_34" },
+	    { es: "por favor", jp: "ください", id: "03_35" },
+	    { es: "cuál", jp: "どの", id: "03_36" },
+	    { es: "bueno, agrad., a menudo", jp: "よく", id: "03_37" },
+	    { es: "apartamento", jp: "アパート", id: "03_38" },
+	    { es: "kilogramo", jp: "キログラム", id: "03_39" },
+	    { es: "camisa", jp: "シャツ", id: "03_40" },
+	    { es: "ducha", jp: "シャワー", id: "03_41" },
+	    { es: "estufa", jp: "ストーブ", id: "03_42" },
+	    { es: "televisión", jp: "テレビ", id: "03_43" },
+	    { es: "mantequilla", jp: "バター", id: "03_44" },
+	    { es: "cerilla", jp: "マッチ", id: "03_45" },
+	    { es: "disco de música", jp: "レコード", id: "03_46" },
+	    { es: "camisa de vestir", jp: "ワイシャツ", id: "03_47" },
+	    { es: "hoy", jp: "今日", id: "03_48" },
+	    { es: "este mes", jp: "今月", id: "03_49" },
+	    { es: "vacaciones", jp: "休み", id: "03_50" },
+	    { es: "encontrarse", jp: "会う", id: "03_51" },
+	    { es: "hacer, crear, fabricar", jp: "作る", id: "03_52" },
+	    { es: "salida", jp: "出口", id: "03_53" },
+	    { es: "sello postal", jp: "切手", id: "03_54" },
+	    { es: "fumar, aspirar", jp: "吸う", id: "03_55" },
+	    { es: "soplar", jp: "吹く", id: "03_56" },
+	    { es: "enfurecerse, preocuparse", jp: "困る", id: "03_57" },
+	    { es: "país", jp: "国", id: "03_58" },
+	    { es: "vender", jp: "売る", id: "03_59" },
+	    { es: "muchos, numeroso", jp: "多い", id: "03_60" },
+	    { es: "tarde, noche", jp: "夜", id: "03_61" },
+	    { es: "grande, largo", jp: "大きい", id: "03_62" },
+	    { es: "hermana menor (propia)", jp: "妹", id: "03_63" },
+	    { es: "hermana mayor (propia)", jp: "姉", id: "03_64" },
+	    { es: "barato", jp: "安い", id: "03_65" },
+	    { es: "pequeño", jp: "小さい", id: "03_66" },
+	    { es: "tienda, comercio", jp: "店", id: "03_67" },
+	    { es: "lugar, sitio", jp: "所", id: "03_68" },
+	    { es: "rápido, temprano", jp: "早い", id: "03_69" },
+	    { es: "ropa (occidental)", jp: "服", id: "03_70" },
+	    { es: "llegar, venir", jp: "来る", id: "03_71" },
+	    { es: "detener(se)", jp: "止まる", id: "03_72" },
+	  ],
+	  "bloque_04": [
+	    { es: "morir", jp: "死ぬ", id: "04_01" },
+	    { es: "sucio, manchado", jp: "汚い", id: "04_02" },
+	    { es: "cosa, objeto", jp: "物", id: "04_03" },
+	    { es: "cielo", jp: "空", id: "04_04" },
+	    { es: "ver, mirar", jp: "見る", id: "04_05" },
+	    { es: "correr", jp: "走る", id: "04_06" },
+	    { es: "cerca (1)", jp: "近い", id: "04_07" },
+	    { es: "devolver algo", jp: "返す", id: "04_08" },
+	    { es: "verja, portal", jp: "門", id: "04_09" },
+	    { es: "lluvia", jp: "雨", id: "04_10" },
+	    { es: "azul (sustantivo)", jp: "青", id: "04_11" },
+	    { es: "no mucho, resto, residuo", jp: "あまり", id: "04_12" },
+	    { es: "bueno, agradable", jp: "いい", id: "04_13" },
+	    { es: "bueno, entonces... (2)", jp: "じゃあ", id: "04_14" },
+	    { es: "adelante, con confianza", jp: "どうぞ", id: "04_15" },
+	    { es: "cuál (3 o más)", jp: "どれ", id: "04_16" },
+	    { es: "todos", jp: "みんな", id: "04_17" },
+	    { es: "kilómetro", jp: "キロメートル", id: "04_18" },
+	    { es: "guitarra", jp: "ギター", id: "04_19" },
+	    { es: "taxi", jp: "タクシー", id: "04_20" },
+	    { es: "mesa", jp: "テーブル", id: "04_21" },
+	    { es: "pañuelo", jp: "ハンカチ", id: "04_22" },
+	    { es: "página", jp: "ページ", id: "04_23" },
+	    { es: "hotel", jp: "ホテル", id: "04_24" },
+	    { es: "entonces, pues bien", jp: "でわ", id: "04_25" },
+	    { es: "cuchillo", jp: "ナイフ", id: "04_26" },
+	    { es: "buzón de correo", jp: "ポスト", id: "04_27" },
+	    { es: "restaurante occidental", jp: "レストラン", id: "04_28" },
+	    { es: "descansar", jp: "休む", id: "04_29" },
+	    { es: "bajo (altura)", jp: "低い", id: "04_30" },
+	    { es: "comienzo, principio (1)", jp: "初め", id: "04_31" },
+	    { es: "antes, en frente", jp: "前", id: "04_32" },
+	    { es: "medio, mitad (2)", jp: "半分", id: "04_33" },
+	    { es: "lo mismo, similar", jp: "同じ", id: "04_34" },
+	    { es: "gustar, querer", jp: "好き", id: "04_35" },
+	    { es: "estar (obj, anim.), existir", jp: "いる", id: "04_36" },
+	    { es: "después", jp: "後", id: "04_37" },
+	    { es: "ocupado", jp: "忙しい", id: "04_38" },
+	    { es: "mediodía, día", jp: "昼", id: "04_39" },
+	    { es: "caminar", jp: "歩く", id: "04_40" },
+	    { es: "mar, playa", jp: "海", id: "04_41" },
+	    { es: "conocer, estar al tanto", jp: "知る", id: "04_42" },
+	    { es: "espalda, espina dorsal", jp: "背", id: "04_43" },
+	    { es: "bueno, placentero", jp: "よい", id: "04_44" },
+	    { es: "decir, contar", jp: "言う", id: "04_45" },
+	    { es: "rojo (adjetivo)", jp: "赤い", id: "04_46" },
+	    { es: "picante", jp: "辛い", id: "04_47" },
+	    { es: "viento, brisa", jp: "風", id: "04_48" },
+	    { es: "hacer, intentar, practicar", jp: "する", id: "04_49" },
+	    { es: "muchos, abundantes", jp: "たくさん", id: "04_50" },
+	    { es: "quizás, probablemente", jp: "たぶん", id: "04_51" },
+	    { es: "sandalias, zapatillas", jp: "スリッパ", id: "04_52" },
+	    { es: "fiesta", jp: "パーティー", id: "04_53" },
+	    { es: "cama", jp: "ベッド", id: "04_54" },
+	    { es: "radio", jp: "ラジオ", id: "04_55" },
+	    { es: "subirse, entrar (vehículo)", jp: "乗る", id: "04_56" },
+	    { es: "este año", jp: "今年", id: "04_57" },
+	    { es: "residir, vivir en", jp: "住む", id: "04_58" },
+	    { es: "usar, manipular", jp: "使う", id: "04_59" },
+	    { es: "vitalidad, salud", jp: "元気", id: "04_60" },
+	    { es: "el mes pasado", jp: "先月", id: "04_61" },
+	    { es: "primera vez", jp: "初めて", id: "04_62" },
+	    { es: "más allá, dir. opuesta", jp: "向こう", id: "04_63" },
+	    { es: "florecer", jp: "咲く", id: "04_64" },
+	    { es: "grande, gran, largo (1)", jp: "大きな", id: "04_65" },
+	    { es: "estar bien, estar ok", jp: "大丈夫", id: "04_66" },
+	    { es: "clima", jp: "天気", id: "04_67" },
+	    { es: "comienzo, principio (2)", jp: "始め", id: "04_68" },
+	    { es: "casa", jp: "家", id: "04_69" },
+	    { es: "pequeño (1)", jp: "小さな", id: "04_70" },
+	    { es: "poco, escaso", jp: "少ない", id: "04_71" },
+	    { es: "jardín, patio", jp: "庭", id: "04_72" },
+	  ],
+	  "bloque_05": [
+	    { es: "esperar", jp: "待つ", id: "05_01" },
+	    { es: "detrás, parte trasera", jp: "後ろ", id: "05_02" },
+	    { es: "olvidar", jp: "忘れる", id: "05_03" },
+	    { es: "empujar, presionar", jp: "押す", id: "05_04" },
+	    { es: "llevar, cargar, sostener", jp: "持つ", id: "05_05" },
+	    { es: "brillante, luminoso, aleg.", jp: "明るい", id: "05_06" },
+	    { es: "todos los días", jp: "毎日", id: "05_07" },
+	    { es: "cada mes, mensualmente", jp: "毎月", id: "05_08" },
+	    { es: "carne de vaca", jp: "牛肉", id: "05_09" },
+	    { es: "papel", jp: "紙", id: "05_10" },
+	    { es: "pelo (de la cabeza)", jp: "髪", id: "05_11" },
+	    { es: "por sí mismo, propio", jp: "自分", id: "05_12" },
+	    { es: "joven (adjetivo)", jp: "若い", id: "05_13" },
+	    { es: "necesitar", jp: "要る", id: "05_14" },
+	    { es: "largo (dist. o tiempo)", jp: "長い", id: "05_15" },
+	    { es: "azul (adjetivo)", jp: "青い", id: "05_16" },
+	    { es: "padre (ajeno)", jp: "お父さん", id: "05_17" },
+	    { es: "dinero", jp: "お金", id: "05_18" },
+	    { es: "gradualmente", jp: "だんだん", id: "05_19" },
+	    { es: "exactamente", jp: "ちょうど", id: "05_20" },
+	    { es: "muy, mucho", jp: "とても", id: "05_21" },
+	    { es: "¿cuál? (3)", jp: "どちら", id: "05_22" },
+	    { es: "¿por dónde?", jp: "どっち", id: "05_23" },
+	    { es: "¿quién?", jp: "どなた", id: "05_24" },
+	    { es: "aún, todavía", jp: "まだ", id: "05_25" },
+	    { es: "calendario", jp: "カレンダー", id: "05_26" },
+	    { es: "deporte", jp: "スポーツ", id: "05_27" },
+	    { es: "centro comercial", jp: "デパート", id: "05_28" },
+	    { es: "corbata", jp: "ネクタイ", id: "05_29" },
+	    { es: "botón", jp: "ボタン", id: "05_30" },
+	    { es: "radiocassette", jp: "ラジカセ", id: "05_31" },
+	    { es: "composición, escritura", jp: "作文", id: "05_32" },
+	    { es: "cerca, al lado, proxim.", jp: "側", id: "05_33" },
+	    { es: "maestro, profesor, doctor", jp: "先生", id: "05_34" },
+	    { es: "salir afuera, de excursión", jp: "出かける", id: "05_35" },
+	    { es: "grueso, profundo", jp: "厚い", id: "05_36" },
+	    { es: "el año pasado", jp: "去年", id: "05_37" },
+	    { es: "universidad", jp: "大学", id: "05_38" },
+	    { es: "niño", jp: "子供", id: "05_39" },
+	    { es: "regresar a casa", jp: "帰る", id: "05_40" },
+	    { es: "sentarse", jp: "座る", id: "05_41" },
+	    { es: "fácil, sencillo", jp: "易しい", id: "05_42" },
+	    { es: "girar, doblar", jp: "曲がる", id: "05_43" },
+	    { es: "escribir, dibujar", jp: "書く", id: "05_44" },
+	    { es: "verdad, realidad", jp: "本当", id: "05_45" },
+	    { es: "próximo mes", jp: "来月", id: "05_46" },
+	    { es: "nadar", jp: "泳ぐ", id: "05_47" },
+	    { es: "lavar", jp: "洗う", id: "05_48" },
+	    { es: "cenicero", jp: "灰皿", id: "05_49" },
+	    { es: "estrecho", jp: "狭い", id: "05_50" },
+	    { es: "gato", jp: "猫", id: "05_51" },
+	    { es: "nacer", jp: "生まれる", id: "05_52" },
+	    { es: "niño, chico (varón)", jp: "男の子", id: "05_53" },
+	    { es: "ventana", jp: "窓", id: "05_54" },
+	    { es: "mostrar", jp: "見せる", id: "05_55" },
+	    { es: "rápido (2)", jp: "速い", id: "05_56" },
+	    { es: "camino, calle, método", jp: "道", id: "05_57" },
+	    { es: "pesado", jp: "重い", id: "05_58" },
+	    { es: "caer (ej. lluvia)", jp: "降る", id: "05_59" },
+	    { es: "nieve", jp: "雪", id: "05_60" },
+	    { es: "pez, pescado", jp: "魚", id: "05_61" },
+	    { es: "pájaro", jp: "鳥", id: "05_62" },
+	    { es: "negro (sustantivo)", jp: "黒", id: "05_63" },
+	    { es: "por allí (informal)", jp: "あっち", id: "05_64" },
+	    { es: "hermano mayor (ajeno)", jp: "お兄さん", id: "05_65" },
+	    { es: "madre (ajena)", jp: "お母さん", id: "05_66" },
+	    { es: "té", jp: "お茶", id: "05_67" },
+	    { es: "por ahí (informal)", jp: "そっち", id: "05_68" },
+	    { es: "muy, inmenso, enorme", jp: "たいへん", id: "05_69" },
+	    { es: "tazón", jp: "茶わん", id: "05_70" },
+	    { es: "dónde", jp: "どこ", id: "05_71" },
+	    { es: "etc.", jp: "など", id: "05_72" },
+	  ],
+	  "bloque_06": [
+	    { es: "ascensor", jp: "エレベーター", id: "06_01" },
+	    { es: "pantalones", jp: "ズボン", id: "06_02" },
+	    { es: "alinear", jp: "並べる", id: "06_03" },
+	    { es: "paraguas", jp: "傘", id: "06_04" },
+	    { es: "hermanos (propios)", jp: "兄弟", id: "06_05" },
+	    { es: "hermanos (ajenos)", jp: "ご兄弟", id: "06_06" },
+	    { es: "frío (al tacto)", jp: "冷たい", id: "06_07" },
+	    { es: "peligroso", jp: "危ない", id: "06_08" },
+	    { es: "padre (propio)", jp: "父", id: "06_09" },
+	    { es: "madre (propia)", jp: "母", id: "06_10" },
+	    { es: "adorable, muy agradab.", jp: "大好き", id: "06_11" },
+	    { es: "comenzar", jp: "始まる", id: "06_12" },
+	    { es: "sostener un paraguas", jp: "差す", id: "06_13" },
+	    { es: "débil, delicado", jp: "弱い", id: "06_14" },
+	    { es: "mañana", jp: "あした", id: "06_15" },
+	    { es: "a veces", jp: "時々", id: "06_16" },
+	    { es: "noche", jp: "晩", id: "06_17" },
+	    { es: "famoso", jp: "有名", id: "06_18" },
+	    { es: "la mañana (1)", jp: "朝", id: "06_19" },
+	    { es: "diente", jp: "歯", id: "06_20" },
+	    { es: "anualmente", jp: "毎年", id: "06_21" },
+	    { es: "borrar, apagar (interr.)", jp: "消す", id: "06_22" },
+	    { es: "leche de vaca", jp: "牛乳", id: "06_23" },
+	    { es: "terminar, acabar", jp: "終る", id: "06_24" },
+	    { es: "pintura, dibujo", jp: "絵", id: "06_25" },
+	    { es: "alto, elevado, caro", jp: "高い", id: "06_26" },
+	    { es: "cómo (de qué manera)", jp: "いかが", id: "06_27" },
+	    { es: "¿cuánto/s? (1)", jp: "いくつ", id: "06_28" },
+	    { es: "el mejor, el primero", jp: "いちばん", id: "06_29" },
+	    { es: "alcohol, sake", jp: "お酒", id: "06_30" },
+	    { es: "pero, sin embargo (2)", jp: "しかし", id: "06_31" },
+	    { es: "encender, iluminar", jp: "つける", id: "06_32" },
+	    { es: "poder, ser capaz", jp: "できる", id: "06_33" },
+	    { es: "cómo (qué tal)", jp: "どう", id: "06_34" },
+	    { es: "bolígrafo (2)", jp: "ボールペン", id: "06_35" },
+	    { es: "bolsillo", jp: "ポケット", id: "06_36" },
+	    { es: "trabajo, empleo", jp: "仕事", id: "06_37" },
+	    { es: "empresa, corporación", jp: "会社", id: "06_38" },
+	    { es: "tomar prestado", jp: "借りる", id: "06_39" },
+	    { es: "la mañana (2), A.M.", jp: "午前", id: "06_40" },
+	    { es: "la tarde, P.M.", jp: "午後", id: "06_41" },
+	    { es: "cocina", jp: "台所", id: "06_42" },
+	    { es: "mapa", jp: "地図", id: "06_43" },
+	    { es: "sal", jp: "塩", id: "06_44" },
+	    { es: "país extranjero", jp: "外国", id: "06_45" },
+	    { es: "desagrad., detestable", jp: "嫌", id: "06_46" },
+	    { es: "estudiante", jp: "学生", id: "06_47" },
+	    { es: "fuerte, potente", jp: "強い", id: "06_48" },
+	    { es: "tocar un instrumento", jp: "弾く", id: "06_49" },
+	    { es: "malo, pobre, inferior", jp: "悪い", id: "06_50" },
+	    { es: "ayer", jp: "昨日", id: "06_51" },
+	    { es: "tiempo libre", jp: "暇", id: "06_52" },
+	    { es: "el próximo año", jp: "来年", id: "06_53" },
+	    { es: "desaparecer, desvanec.", jp: "消える", id: "06_54" },
+	    { es: "cruzar, ir a través de", jp: "渡る", id: "06_55" },
+	    { es: "cansar, cansarse de", jp: "疲れる", id: "06_56" },
+	    { es: "crecer, subir, escalar", jp: "登る", id: "06_57" },
+	    { es: "todos (honorífico)", jp: "皆さん", id: "06_58" },
+	    { es: "llegar a (un sitio)", jp: "着く", id: "06_59" },
+	    { es: "llevar puesto (ropa torso)", jp: "着る", id: "06_60" },
+	    { es: "delgado, fino", jp: "細い", id: "06_61" },
+	    { es: "aprender", jp: "習う", id: "06_62" },
+	    { es: "conversación, charla", jp: "話", id: "06_63" },
+	    { es: "pegar, fijar,", jp: "貼る", id: "06_64" },
+	    { es: "lento, tarde", jp: "遅い", id: "06_65" },
+	    { es: "abrirse, quedarse abiert.", jp: "開く", id: "06_66" },
+	    { es: "bajar/se, descender", jp: "降りる", id: "06_67" },
+	    { es: "zapatos, calzado", jp: "靴", id: "06_68" },
+	    { es: "comer", jp: "食べる", id: "06_69" },
+	    { es: "caramelos, dulces", jp: "あめ", id: "06_70" },
+	    { es: "negro (adjetivo)", jp: "黒い", id: "06_71" },
+	    { es: "bañarse, ducharse", jp: "浴びる", id: "06_72" },
+	  ],
+	  "bloque_07": [
+	    { es: "¿cuánto/s? (2)", jp: "いくら", id: "07_01" },
+	    { es: "policía", jp: "おまわりさん", id: "07_02" },
+	    { es: "fiambrera (japonesa)", jp: "お弁当", id: "07_03" },
+	    { es: "bolsa, cartera", jp: "かばん", id: "07_04" },
+	    { es: "al instante, inmediatam.", jp: "すぐに", id: "07_05" },
+	    { es: "y, así que, y ahora", jp: "そして", id: "07_06" },
+	    { es: "después de eso", jp: "それから", id: "07_07" },
+	    { es: "poco apetitoso", jp: "まずい", id: "07_08" },
+	    { es: "magnífico, espléndido", jp: "立派", id: "07_09" },
+	    { es: "anteayer", jp: "一昨日", id: "07_10" },
+	    { es: "poner en fila", jp: "並ぶ", id: "07_11" },
+	    { es: "esta semana", jp: "今週", id: "07_12" },
+	    { es: "trabajar", jp: "働く", id: "07_13" },
+	    { es: "llamar", jp: "呼ぶ", id: "07_14" },
+	    { es: "frío (clima)", jp: "寒い", id: "07_15" },
+	    { es: "dormir", jp: "寝る", id: "07_16" },
+	    { es: "pasillo, corredor", jp: "廊下", id: "07_17" },
+	    { es: "carta", jp: "手紙", id: "07_18" },
+	    { es: "colgar, tomarse (din. tie)", jp: "かかる", id: "07_19" },
+	    { es: "enseñar", jp: "教える", id: "07_20" },
+	    { es: "clima despejado", jp: "晴れ", id: "07_21" },
+	    { es: "cálido, caluroso (clima)", jp: "暑い", id: "07_22" },
+	    { es: "deseado", jp: "欲しい", id: "07_23" },
+	    { es: "canción", jp: "歌", id: "07_24" },
+	    { es: "fresco, refrescante", jp: "涼しい", id: "07_25" },
+	    { es: "atravesar, entregar", jp: "渡す", id: "07_26" },
+	    { es: "tibio, templado", jp: "温い", id: "07_27" },
+	    { es: "doloroso", jp: "痛い", id: "07_28" },
+	    { es: "corto, breve", jp: "短い", id: "07_29" },
+	    { es: "verde", jp: "緑", id: "07_30" },
+	    { es: "poner, colocar", jp: "置く", id: "07_31" },
+	    { es: "desvestir", jp: "脱ぐ", id: "07_32" },
+	    { es: "comprar", jp: "買う", id: "07_33" },
+	    { es: "prestar", jp: "貸す", id: "07_34" },
+	    { es: "levantarse, despertarse", jp: "起きる", id: "07_35" },
+	    { es: "ligero", jp: "軽い", id: "07_36" },
+	    { es: "discrepar", jp: "違う", id: "07_37" },
+	    { es: "lejos, distante", jp: "遠い", id: "07_38" },
+	    { es: "cerrar", jp: "閉める", id: "07_39" },
+	    { es: "estación (ej. autobuses)", jp: "駅", id: "07_40" },
+	    { es: "nariz", jp: "鼻", id: "07_41" },
+	    { es: "silla", jp: "いす", id: "07_42" },
+	    { es: "hermana mayor (ajena)", jp: "お姉さん", id: "07_43" },
+	    { es: "¿por qué?", jp: "どうして", id: "07_44" },
+	    { es: "palillos", jp: "はし", id: "07_45" },
+	    { es: "una vez más", jp: "もう一度", id: "07_46" },
+	    { es: "juntos", jp: "一緒", id: "07_47" },
+	    { es: "abrigo, chaqueta (2)", jp: "上着", id: "07_48" },
+	    { es: "fotografía", jp: "写真", id: "07_49" },
+	    { es: "billete, ticket", jp: "切符", id: "07_50" },
+	    { es: "trabajar para", jp: "勤める", id: "07_51" },
+	    { es: "médico", jp: "医者", id: "07_52" },
+	    { es: "amigo, compañero", jp: "友達", id: "07_53" },
+	    { es: "nombre", jp: "名前", id: "07_54" },
+	    { es: "cena", jp: "夕飯", id: "07_55" },
+	    { es: "extranjero", jp: "外国人", id: "07_56" },
+	    { es: "disgusto, odio", jp: "嫌い", id: "07_57" },
+	    { es: "sombrero", jp: "帽子", id: "07_58" },
+	    { es: "frase, redacción, texto", jp: "文章", id: "07_59" },
+	    { es: "estar soleado", jp: "晴れる", id: "07_60" },
+	    { es: "oscuro", jp: "暗い", id: "07_61" },
+	    { es: "al lado", jp: "横", id: "07_62" },
+	    { es: "perder algo", jp: "なくす", id: "07_63" },
+	    { es: "ruidoso, molesto", jp: "うるさい", id: "07_64" },
+	    { es: "alumno", jp: "生徒", id: "07_65" },
+	    { es: "responder, contestar", jp: "答える", id: "07_66" },
+	    { es: "caja", jp: "箱", id: "07_67" },
+	    { es: "escuchar, preguntar", jp: "聞く", id: "07_68" },
+	    { es: "marrón claro", jp: "茶色", id: "07_69" },
+	    { es: "recordar", jp: "覚える", id: "07_70" },
+	    { es: "hablar", jp: "話す", id: "07_71" },
+	    { es: "¿quién? (2)", jp: "誰", id: "07_72" },
+	  ],
+	  "bloque_08": [
+	    { es: "goma de borrar", jp: "消しゴム", id: "08_01" },
+	    { es: "instituto", jp: "高校", id: "08_02" },
+	    { es: "estuche", jp: "筆箱", id: "08_03" },
+	    { es: "lápiz", jp: "鉛筆", id: "08_04" },
+	    { es: "comida", jp: "食べ物", id: "08_05" },
+	    { es: "ropa interior", jp: "パンツ", id: "08_06" },
+	    { es: "beber", jp: "飲む", id: "08_07" },
+	    { es: "bebida", jp: "飲み物", id: "08_08" },
+	    { es: "sujetador", jp: "ブラジャー", id: "08_09" },
+	    { es: "cortina", jp: "カーテン", id: "08_10" },
+	    { es: "juego", jp: "ゲーム", id: "08_11" },
+	    { es: "ordenador (1)", jp: "コンピューター", id: "08_12" },
+	    { es: "ordenador (2)", jp: "パソコン", id: "08_13" },
+	    { es: "póster", jp: "ポスター", id: "08_14" },
+	    { es: "diseño", jp: "デザイン", id: "08_15" },
+	    { es: "nuestro hogar", jp: "うち", id: "08_16" },
+	    { es: "Japón", jp: "日本", id: "08_17" },
+	    { es: "japonés (idioma)", jp: "日本語", id: "08_18" },
+	    { es: "estudio", jp: "勉強", id: "08_19" },
+	    { es: "teléfono / llamada tlf.", jp: "電話 ", id: "08_20" },
+	    { es: "reloj", jp: "時計", id: "08_21" },
+	    { es: "leche", jp: "ミルク", id: "08_22" },
+	    { es: "cerveza", jp: "ビール", id: "08_23" },
+	    { es: "pasta", jp: "パスタ", id: "08_24" },
+	    { es: "cafetería", jp: "喫茶店", id: "08_25" },
+	    { es: "oficina de correos", jp: "郵便局", id: "08_26" },
+	    { es: "banco", jp: "銀行", id: "08_27" },
+	    { es: "biblioteca", jp: "図書館", id: "08_28" },
+	    { es: "carnicería", jp: "肉屋", id: "08_29" },
+	    { es: "pescadería", jp: "魚屋", id: "08_30" },
+	    { es: "farmacia", jp: "薬屋", id: "08_31" },
+	    { es: "tienda 24h", jp: "コンビニ", id: "08_32" },
+	    { es: "jugar/pasar el rato", jp: "遊ぶ", id: "08_33" },
+	    { es: "leer", jp: "読む", id: "08_34" },
+	    { es: "practicar", jp: "練習する", id: "08_35" },
+	    { es: "escuela", jp: "学校 ", id: "08_36" },
+	    { es: "hospital", jp: "病院", id: "08_37" },
+	    { es: "parque", jp: "公園", id: "08_38" },
+	    { es: "él/novio", jp: "彼", id: "08_39" },
+	    { es: "ella/novia", jp: "彼女", id: "08_40" },
+	    { es: "animal", jp: "動物", id: "08_41" },
+	    { es: "bicho", jp: "虫", id: "08_42" },
+	    { es: "aspiradora", jp: "掃除機", id: "08_43" },
+	    { es: "fregona", jp: "モップ", id: "08_44" },
+	    { es: "escoba", jp: "箒", id: "08_45" },
+	    { es: "portátil", jp: "ラップトップ", id: "08_46" },
+	    { es: "¡buenos días!", jp: "おはよう", id: "08_47" },
+	    { es: "hola/buenas tardes", jp: "こんにちは", id: "08_48" },
+	    { es: "buenas noches (saludo)", jp: "こんばんは", id: "08_49" },
+	    { es: "buenas noches (dormir)", jp: "おやすみなさい", id: "08_50" },
+	    { es: "adiós", jp: "さようなら", id: "08_51" },
+	    { es: "gracias", jp: "ありがとう", id: "08_52" },
+	    { es: "disculpe...", jp: "すみません", id: "08_53" },
+	    { es: "perdón", jp: "ごめんなさい", id: "08_54" },
+	    { es: "¡me voooy!", jp: "いってきます", id: "08_55" },
+	    { es: "¡me queedo!", jp: "いってらっしゃい", id: "08_56" },
+	    { es: "¡ya estoy en casa!", jp: "ただいま", id: "08_57" },
+	    { es: "¡bienvenida a casa!", jp: "おかえりなさい", id: "08_58" },
+	    { es: "vocabulario", jp: "単語", id: "08_59" },
+	    { es: "enero", jp: "一月", id: "08_60" },
+	    { es: "febrero", jp: "二月", id: "08_61" },
+	    { es: "marzo", jp: "三月", id: "08_62" },
+	    { es: "abril", jp: "四月", id: "08_63" },
+	    { es: "mayo", jp: "五月", id: "08_64" },
+	    { es: "junio", jp: "六月", id: "08_65" },
+	    { es: "julio (1)", jp: "七月", id: "08_66" },
+	    { es: "julio (2)", jp: "七月", id: "08_67" },
+	    { es: "agosto", jp: "八月", id: "08_68" },
+	    { es: "septiembre", jp: "九月", id: "08_69" },
+	    { es: "octubre", jp: "十月", id: "08_70" },
+	    { es: "noviembre", jp: "十一月", id: "08_71" },
+	    { es: "diciembre", jp: "十二月", id: "08_72" },
+	  ],
+	};
+
+let studyMode = 'audio';
+let selectedBlockSet = new Set();
+let selectedSubblocks = new Set(Array.from({ length: 12 }, (_, i) => i));
+let currentWords = [];
+let currentIndex = 0;
+let correctAnswers = 0;
+let totalWords = 0;
+
+const cardDisplay = document.getElementById("cardDisplay");
+const actionButtons = document.getElementById("actionButtons");
+const subblockContainer = document.getElementById("subblockContainer");
+
+function setStudyMode(mode) {
+  studyMode = mode;
+  document.getElementById("mode-audio").style.opacity = mode === "audio" ? 1 : 0.4;
+  document.getElementById("mode-japanese").style.opacity = mode === "japanese" ? 1 : 0.4;
+  document.getElementById("mode-spanish").style.opacity = mode === "spanish" ? 1 : 0.4;
+}
+
+function generateBlockButtons(containerId) {
+  const container = document.getElementById(containerId);
+  const blockIds = Object.keys(vocabulario);
+  blockIds.forEach(blockId => {
+    const blockNum = parseInt(blockId.split("_")[1], 10);
+    const btn = document.createElement("button");
+    btn.textContent = blockNum;
+    btn.className = "block-btn";
+    btn.style.opacity = 0.4;
+    btn.onclick = () => toggleBlock(btn, blockId);
+    container.appendChild(btn);
+  });
+}
+
+function toggleBlock(button, blockId) {
+  if (selectedBlockSet.has(blockId)) {
+    selectedBlockSet.delete(blockId);
+    button.style.opacity = 0.4;
+  } else {
+    selectedBlockSet.add(blockId);
+    button.style.opacity = 1;
+  }
+  updateSubblockGrid();
+  updateStartButtonState();
+}
+
+function updateSubblockGrid() {
+  const subblockGrid = document.getElementById("subblockGrid");
+  subblockGrid.innerHTML = "";
+  selectedSubblocks = new Set(Array.from({ length: 12 }, (_, i) => i));
+  if (selectedBlockSet.size === 1) {
+    subblockContainer.style.display = "block";
+    for (let i = 0; i < 12; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i + 1;
+      btn.className = "subblock-btn";
+      btn.style.opacity = 1;
+      btn.onclick = () => toggleSubblock(btn, i);
+      subblockGrid.appendChild(btn);
+    }
+  } else {
+    subblockContainer.style.display = "none";
+  }
+}
+
+function toggleSubblock(button, index) {
+  if (selectedSubblocks.has(index)) {
+    selectedSubblocks.delete(index);
+    button.style.opacity = 0.4;
+  } else {
+    selectedSubblocks.add(index);
+    button.style.opacity = 1;
+  }
+}
+
+function updateStartButtonState() {
+  const startBtn = document.getElementById("startButton");
+  if (selectedBlockSet.size > 0) {
+    startBtn.style.opacity = 1;
+    startBtn.disabled = false;
+  } else {
+    startBtn.style.opacity = 0.4;
+    startBtn.disabled = true;
+  }
+}
+
+function startSession() {
+  currentWords = [];
+  correctAnswers = 0;
+  const blocks = Array.from(selectedBlockSet);
+
+  blocks.forEach(block => {
+    const allWords = vocabulario[block] || [];
+    if (blocks.length === 1) {
+      selectedSubblocks.forEach(index => {
+        const start = index * 6;
+        currentWords.push(...allWords.slice(start, start + 6));
+      });
+    } else {
+      currentWords.push(...allWords);
+    }
+  });
+
+  currentWords = shuffle(currentWords);
+  currentIndex = 0;
+  totalWords = currentWords.length;
+  updateProgressBar();
+
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("study").style.display = "block";
+  showCard();
+}
+
+function showCard() {
+  if (currentIndex >= currentWords.length) {
+    cardDisplay.innerHTML = "<h2>Sesión de estudio terminada ✅</h2>";
+    actionButtons.innerHTML = `<button onclick='resetApp()'>Volver al inicio</button>`;
+    return;
+  }
+  const word = currentWords[currentIndex];
+  let content = "";
+
+  if (studyMode === "audio") {
+    playAudio(word);
+    content = `
+      <div style='min-height: 4em;'>
+        <em>Escuchando...</em><br>
+        <button onclick='playAudioAgain()' style='margin-top: 0.5em; font-size: 0.9em;'>🔁 Repetir</button>
+      </div>
+    `;
+  } else if (studyMode === "japanese") {
+    content = `<div style='min-height: 4em;'><h2>${word.jp}</h2></div>`;
+  } else if (studyMode === "spanish") {
+    content = `<div style='min-height: 4em;'><h2>${word.es}</h2></div>`;
+  }
+
+  cardDisplay.innerHTML = content;
+  actionButtons.innerHTML = `<button onclick='revealAnswer()'>Resolver</button>`;
+}
+
+function revealAnswer() {
+  const word = currentWords[currentIndex];
+  playAudio(word);
+  cardDisplay.innerHTML = `
+    <div style='min-height: 4em;'>
+      <h2>${word.jp}</h2>
+      <p>${word.es}</p>
+    </div>
+  `;
+  actionButtons.innerHTML = `
+    <button onclick="markAnswer(true)">✅</button>
+    <button onclick="markAnswer(false)">❌</button>
+  `;
+}
+
+function markAnswer(correct) {
+  const word = currentWords[currentIndex];
+  if (correct) correctAnswers++;
+  else currentWords.push(word);
+  currentIndex++;
+  updateProgressBar();
+  showCard();
+}
+
+function updateProgressBar() {
+  const total = totalWords;
+  const correct = correctAnswers;
+  const percentage = (correct / total) * 100;
+  document.getElementById("progress-counter").textContent = `${correct}/${total}`;
+  document.getElementById("progress-fill").style.width = `${percentage}%`;
+}
+
+function playAudio(word) {
+  const id = word.id || "00_00";
+  const audio = new Audio(`audios/palabra_${id}.mp3`);
+  audio.play();
+}
+
+function playAudioAgain() {
+  const word = currentWords[currentIndex];
+  playAudio(word);
+}
+
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
+function resetApp() {
+  location.reload();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  generateBlockButtons("blockGrid");
+  updateStartButtonState();
+});
+</script>
+</body>
+</html>
