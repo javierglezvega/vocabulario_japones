@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&family=Noto+Sans+JP&family=Noto+Serif+JP&display=swap" rel="stylesheet">
   <title>Estudio de Vocabulario Japonés</title>
   <style>
     body {
@@ -716,6 +717,8 @@ let currentWords = [];
 let currentIndex = 0;
 let correctAnswers = 0;
 let totalWords = 0;
+let currentFont = "'Noto Sans JP'";
+let currentWeight = 400;
 
 const cardDisplay = document.getElementById("cardDisplay");
 const actionButtons = document.getElementById("actionButtons");
@@ -838,9 +841,19 @@ function showCard() {
         <button onclick='playAudioAgain()' style='margin-top: 0.5em; font-size: 0.9em;'>🔁 Repetir</button>
       </div>
     `;
-  } else if (studyMode === "japanese") {
-    content = `<div style='min-height: 4em;'><h2>${word.jp}</h2></div>`;
-  } else if (studyMode === "spanish") {
+} else if (studyMode === "japanese") {
+	const fuentes = ["'Noto Sans JP'", "'Noto Serif JP'", "'M PLUS Rounded 1c'"];
+	const pesos = [400, 500, 700];
+	currentFont = fuentes[Math.floor(Math.random() * fuentes.length)];
+	currentWeight = pesos[Math.floor(Math.random() * pesos.length)];
+  
+	content = `
+	  <div style='min-height: 4em;'>
+	    <h2 style="font-family: ${currentFont}; font-weight: ${currentWeight};">${word.jp}</h2>
+	  </div>
+	`;
+  
+} else if (studyMode === "spanish") {
     content = `<div style='min-height: 4em;'><h2>${word.es}</h2></div>`;
   }
 
@@ -851,11 +864,9 @@ function showCard() {
 function revealAnswer() {
   const word = currentWords[currentIndex];
   playAudio(word);
-  cardDisplay.innerHTML = `
-    <div style='min-height: 4em;'>
-      <h2>${word.jp}</h2>
-      <p>${word.es}</p>
-    </div>
+  document.getElementById("cardDisplay").innerHTML = `
+    <h2 style="font-family: ${currentFont}; font-weight: ${currentWeight};">${word.jp}</h2>
+    <p>${word.es}</p>
   `;
   actionButtons.innerHTML = `
     <button onclick="markAnswer(true)">✅</button>
