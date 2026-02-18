@@ -133,13 +133,13 @@
 	    { es: "ahí (informal)", jp: "そこ", id: "01_11" },
 	    { es: "allí (informal)", jp: "あそこ", id: "01_12" },
 	    { es: "otra vez", jp: "また", id: "01_13" },
-	    { es: "hombre, persona", jp: "人", id: "01_14" },
+	    { es: "persona", jp: "人", id: "01_14" },
 	    { es: "una persona, soltero", jp: "一人", id: "01_15" },
 	    { es: "arriba, encima", jp: "上", id: "01_16" },
 	    { es: "debajo de, abajo, inferior", jp: "下", id: "01_17" },
 	    { es: "meter, entrar", jp: "入る", id: "01_18" },
 	    { es: "boca, apertura, orificio", jp: "口", id: "01_19" },
-	    { es: "mujer, hija, chica", jp: "女", id: "01_20" },
+	    { es: "mujer", jp: "女", id: "01_20" },
 	    { es: "montaña", jp: "山", id: "01_21" },
 	    { es: "río", jp: "川", id: "01_22" },
 	    { es: "sí, es correcto", jp: "ええ", id: "01_23" },
@@ -775,7 +775,7 @@
 		{ es: "cálido, templado (2)", jp: "暖かい", id: "09_61" },
 		{ es: "sombra", jp: "影", id: "09_62" },
 		{ es: "amargo", jp: "苦い", id: "09_63" },
-		{ es: "cola (de animal)", jp: "しっぽ", id: "09_64" },
+		{ es: "cola (de animal)", jp: "尻尾", id: "09_64" },
 		{ es: "diccionario", jp: "辞書", id: "09_65" },
 		{ es: "periódico", jp: "新聞", id: "09_66" },
 		{ es: "bicicleta", jp: "自転車", id: "09_67" },
@@ -1088,7 +1088,9 @@ function showCard() {
 
 function revealAnswer() {
   const word = currentWords[currentIndex];
-  playAudio(word);
+  if (studyMode !== "audio") {
+	  playAudio(word);
+  };
   document.getElementById("cardDisplay").innerHTML = `
     <h2 style="font-family: ${currentFont}; font-weight: ${currentWeight};">${word.jp}</h2>
     <p>${word.es}</p>
